@@ -1,0 +1,80 @@
+name: release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Also run the release check against main's version
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g @anthropic-ai/claude-code@2.1.316
+      - run: make check
+
+  release:
+    name: release
+    if: ((github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && inputs.release)) && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: make release
+
+  publish:
+    name: publish
+    if: github.event.action == 'closed' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: The tag is new
+        id: tag
+        run: |
+          v="$(node -p 'require("./plugins/rule-control/.claude-plugin/plugin.json").version')"
+          tag="rule-control--v$v"
+          rc=0
+          git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null || rc=$?
+          if [ "$rc" -eq 0 ]; then echo "::error::$tag already exists"; exit 1; fi
+          if [ "$rc" -ne 2 ]; then echo "::error::could not look up tag $tag (git ls-remote exit $rc)"; exit 1; fi
+          echo "v=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Release notes from the CHANGELOG
+        env:
+          v: ${{ steps.tag.outputs.v }}
+        run: |
+          v_re=$(printf '%s' "$v" | sed 's/[.]/[.]/g')
+          awk -v v="$v_re" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ || /^\[/ {f=0} f' CHANGELOG.md > notes.md
+          test -s notes.md
+      - run: gh release create "$tag" --target "${{ github.event.pull_request.merge_commit_sha }}" --title "rule-control $v" --notes-file notes.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          tag: ${{ steps.tag.outputs.tag }}
+          v: ${{ steps.tag.outputs.v }}

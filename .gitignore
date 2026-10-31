@@ -1,0 +1,6 @@
+node_modules
+*.log
+.DS_Store
+.worktrees/
+plugins/rule-control/tsconfig.json
+plugins/rule-control/.claude-plugin/types/

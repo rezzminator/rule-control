@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: A rule still reaches every loop
+    url: https://github.com/rezzminator/rule-control/blob/develop/SUPPORT.md
+    about: Function hooks off, a malformed visible-to, a rule that imports files, another plugin rewriting the instructions; SUPPORT.md covers each.
+  - name: A security problem
+    url: https://github.com/rezzminator/rule-control/security/advisories/new
+    about: Report it privately, never in a public issue (see SECURITY.md).
