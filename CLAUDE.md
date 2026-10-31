@@ -14,7 +14,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 - installable plugin: the folder the install copies whole · `plugins/rule-control/`
 - adapter: the only file that touches `$`; it finds and reads the rules, resolves a loop's agent type and wires the hooks to `plugins/rule-control/src/` · `plugins/rule-control/hooks/rule-control.ts`
 - plugin-log: the shared logging library, a byte-identical copy of its canonical source, https://github.com/rezzminator/professor/tree/main/plugins/plugin-log/ts · `plugins/rule-control/src/plugin-log.ts`
-- agent types: a sub-agent's type by its id, a byte-identical copy of tool-visibility-controller's · `plugins/rule-control/src/agent-types.ts`
+- agent types: a sub-agent's type by its id, vendored byte-identical from professor's canonical `plugins/plugin-log/ts/agent-types.ts` by professor's `scripts/plugin-log-sync.sh`, as tool-visibility-controller's copy is · `plugins/rule-control/src/agent-types.ts`
 - plugin API: the function-hooks types of the Claude Code version CI pins, the truth for every hook's shape · `types/claude-code.d.ts`
 - tests: one vitest file per concern; `adapter.test.ts` drives the hooks against a stand-in engine · `tests/`
 - release check: the version agrees in all four places and `CHANGELOG.md` has its dated section · `scripts/release-check.sh`, `Makefile`
