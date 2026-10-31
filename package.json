@@ -1,0 +1,37 @@
+{
+  "name": "rule-control",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin for per-loop rule delivery — a rule file names the loops that receive it: the main chat, chosen agent types, or all",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "test": "vitest run --dir tests",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.hooks.json",
+    "validate:plugin": "claude plugin validate --strict plugins/rule-control",
+    "release:check": "scripts/release-check.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^5.0.5"
+  },
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "claude-code-hooks",
+    "function-hooks",
+    "claude-code-rules",
+    "subagents",
+    "claude-code-subagents",
+    "context-engineering",
+    "token-optimization",
+    "agent-orchestration",
+    "multi-agent",
+    "claude-code-mods",
+    "rule-control"
+  ]
+}
