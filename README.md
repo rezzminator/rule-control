@@ -185,7 +185,7 @@ Rows append to `errors.jsonl`, `warnings.jsonl`, `info.jsonl` and `debug.jsonl` 
 
 | Level | Events |
 | --- | --- |
-| error, also on screen | `frontmatter-problem`, `rule-unreadable`, `rules-dir-unlisted`, `user-tier-skipped`, `discovery-failed`, `imports-kept`, `context-rewritten`, `agent-list-failed`, `loop-unresolved`, `hook-threw` |
+| error, also on screen | `frontmatter-problem`, `rule-unreadable`, `rules-dir-unlisted`, `user-tier-skipped`, `discovery-failed`, `imports-kept`, `context-rewritten`, `agent-list-failed`, `loop-unresolved`, `nested-header-unread`, `hook-threw` |
 | warning | `compaction-unpaired` |
 | info | `delivered`: a loop given its targeted rules, with their paths |
 | debug | `shared-filtered`, `withheld`, `engine-loop` |

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ancestorDirs, HEADER, MARKER, nestedPath, render, rulesFor, splitShared, targeted, type Rule } from '../plugins/rule-control/src/rules.ts';
 
-const make = (path: string, extra: Partial<Rule> = {}): Rule => ({ path, aliases: [path], tier: 'project', paths: false, body: `Body of ${path}.`, ...extra });
+const make = (path: string, extra: Partial<Rule> = {}): Rule => ({ path, tier: 'project', paths: false, body: `Body of ${path}.`, ...extra });
 const MAIN_ONLY = make('/p/.claude/rules/main.md', { filter: { include: ['main'] } });
 const AGENT_ONLY = make('/p/.claude/rules/agent.md', { filter: { include: ['planner'] } });
 const NOT_PLANNER = make('/p/.claude/rules/not-planner.md', { filter: { exclude: ['planner'] } });

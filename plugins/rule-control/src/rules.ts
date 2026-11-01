@@ -5,12 +5,11 @@ import { admits, admitsAll, MAIN, type Filter } from './visible-to.ts';
 export type Tier = 'user' | 'project';
 
 /**
- * One rule file: `path` its real path (the engine's spelling), `aliases` the
- * paths it was found under. `filter` is set for a usable `visible-to` value,
+ * One rule file: `path` its real path (the engine's spelling). `filter` is set for a usable `visible-to` value,
  * `problem` for an unusable one; `paths` is true when the engine scopes it by
  * `paths:`.
  */
-export type Rule = { path: string; aliases: readonly string[]; tier: Tier; filter?: Filter; problem?: string; paths: boolean; body: string };
+export type Rule = { path: string; tier: Tier; filter?: Filter; problem?: string; paths: boolean; body: string };
 
 /** Opens every text this plugin gives a loop, so the loop and a reader of its transcript can tell it from the engine's own instruction files. */
 export const MARKER = 'rule-control: the rules below reach this loop by their visible-to frontmatter.';
