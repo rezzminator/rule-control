@@ -10,7 +10,7 @@ tools: Read, Write, Bash, Glob, Grep
 
 You own every git write in this repository: commits, merges, tags, pushes and pull requests. Read-only git (`status`/`diff`/`log`/`show`/`rev-parse`) is open to every agent.
 
-**Repository:** `rule-control`, a public GitHub repo (`rezzminator/rule-control`) whose plugin installs from Professor's marketplace. The plugin ships from `plugins/rule-control/`; `CLAUDE.md` holds the vocabulary, the gates and the release sequence you execute.
+**Repository:** `rule-control`, a public GitHub repo (`rezzminator/rule-control`) whose plugin installs as `rule-control@professor`, from its own repo's marketplace (named `professor`) or Professor's. The plugin ships from `plugins/rule-control/`; `CLAUDE.md` holds the vocabulary, the gates and the release sequence you execute.
 
 ## Branches
 

@@ -55,10 +55,10 @@ Function hooks are experimental; turn them on before Claude Code starts:
 export CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1
 ```
 
-Install from Professor's marketplace:
+Install from its own marketplace:
 
 ```bash
-claude plugin marketplace add rezzminator/professor
+claude plugin marketplace add rezzminator/rule-control
 claude plugin install rule-control@professor
 ```
 
@@ -74,7 +74,7 @@ claude --plugin-dir plugins/rule-control
 Inside a session:
 
 ```text
-/plugin marketplace add rezzminator/professor
+/plugin marketplace add rezzminator/rule-control
 /plugin install rule-control@professor
 ```
 
@@ -192,7 +192,7 @@ Rows append to `errors.jsonl`, `warnings.jsonl`, `info.jsonl` and `debug.jsonl` 
 
 A missing rules directory is no error and logs nothing. Each problem with a rule file is logged once per plugin load, however often the rule is read.
 
-The log writer is a vendored copy of the shared plugin-log library (`src/plugin-log.ts`), kept byte-identical to its canonical source: rows stay within 4096 bytes, files and directories are private (0600, 0700), a level file over 20 MiB rotates through five generations, and a failed write keeps its rows for the next one.
+The log writer is the plugin's own logging module (`src/plugin-log.ts`): rows stay within 4096 bytes, files and directories are private (0600, 0700), a level file over 20 MiB rotates through five generations, and a failed write keeps its rows for the next one.
 
 ## ⚠️ Limits
 

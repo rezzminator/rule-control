@@ -13,8 +13,8 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 - shared context: the instruction files Claude Code renders once for every loop, answered by `prompt.context` · `types/claude-code.d.ts`
 - installable plugin: the folder the install copies whole · `plugins/rule-control/`
 - adapter: the only file that touches `$`; it finds and reads the rules, resolves a loop's agent type and wires the hooks to `plugins/rule-control/src/` · `plugins/rule-control/hooks/rule-control.ts`
-- plugin-log: the shared logging library, a byte-identical copy of its canonical source, https://github.com/rezzminator/professor/tree/main/plugins/plugin-log/ts · `plugins/rule-control/src/plugin-log.ts`
-- agent types: a sub-agent's type by its id, vendored byte-identical from professor's canonical `plugins/plugin-log/ts/agent-types.ts` by professor's `scripts/plugin-log-sync.sh`, as tool-visibility-controller's copy is · `plugins/rule-control/src/agent-types.ts`
+- plugin-log: the logging library: level files, bounded rows, rotation · `plugins/rule-control/src/plugin-log.ts`
+- agent types: a sub-agent's type by its id · `plugins/rule-control/src/agent-types.ts`
 - plugin API: the function-hooks types of the Claude Code version CI pins, the truth for every hook's shape · `types/claude-code.d.ts`
 - tests: one vitest file per concern; `adapter.test.ts` drives the hooks against a stand-in engine · `tests/`
 - release check: the version agrees in all four places and `CHANGELOG.md` has its dated section · `scripts/release-check.sh`, `Makefile`
@@ -55,7 +55,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 - A new behaviour lands in `plugins/rule-control/src/` as a pure function with a test in `tests/` watched failing first; the adapter only wires it.
 - An error leaves the rule reaching every loop, logged with its context.
 - `$` is passed only to functions declared at the adapter's top level and always spelled `$.noun.method(...)`, else Claude Code loads the module with zero hooks; `npm run validate:plugin` reports a breach.
-- plugin-log and agent types change only in their canonical sources, then are copied in byte-identical.
+- plugin-log and agent types are rule-control's own code, edited here; no other repository holds a source they are copied from.
 - A tracked dev file stays outside `plugins/rule-control/`.
 
 ## Branches and releases
