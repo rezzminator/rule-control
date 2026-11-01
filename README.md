@@ -6,8 +6,8 @@
 
 **Claude Code plugin for per-loop rule delivery — a rule file names the loops that receive it: the main chat, chosen agent types, or all**
 
-[![CI](https://github.com/rezzminator/rule-control/actions/workflows/release.yml/badge.svg?branch=develop)](https://github.com/rezzminator/rule-control/actions/workflows/release.yml)
-[![Version](https://img.shields.io/badge/version-0.1.1-blue)](./CHANGELOG.md)
+[![CI](https://github.com/rezzminator/rule-control/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rezzminator/rule-control/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue)](./CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-D97757)](https://code.claude.com/docs/en/plugins)
 [![Built with Professor](https://img.shields.io/badge/built%20with-Professor-8A2BE2)](https://github.com/rezzminator/professor)
@@ -185,7 +185,7 @@ Rows append to `errors.jsonl`, `warnings.jsonl`, `info.jsonl` and `debug.jsonl` 
 
 | Level | Events |
 | --- | --- |
-| error, also on screen | `frontmatter-problem`, `rule-unreadable`, `rules-dir-unlisted`, `user-tier-skipped`, `discovery-failed`, `imports-kept`, `context-rewritten`, `agent-list-failed`, `loop-unresolved`, `hook-threw` |
+| error, also on screen | `frontmatter-problem`, `rule-unreadable`, `rules-dir-unlisted`, `user-tier-skipped`, `discovery-failed`, `imports-kept`, `context-rewritten`, `agent-list-failed`, `loop-unresolved`, `nested-header-unread`, `hook-threw` |
 | warning | `compaction-unpaired` |
 | info | `delivered`: a loop given its targeted rules, with their paths |
 | debug | `shared-filtered`, `withheld`, `engine-loop` |

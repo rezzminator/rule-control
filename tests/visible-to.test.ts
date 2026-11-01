@@ -29,7 +29,11 @@ describe('readRule', () => {
   it('has no filter without the key or without frontmatter', () => {
     expect(readRule(rule('description: x'))).toEqual({ paths: false, body: 'Body.' });
     expect(readRule('Plain rule.\n')).toEqual({ paths: false, body: 'Plain rule.' });
-    expect(readRule('---\nvisible-to: {include: [main]}\nno close\n').filter).toBeUndefined();
+    expect(readRule('---\nno close\n')).toEqual({ paths: false, body: '---\nno close' });
+  });
+
+  it('names a visible-to whose frontmatter never closes', () => {
+    expect(readRule('---\nvisible-to: {include: [main]}\nno close\n')).toEqual({ problem: 'the frontmatter has no closing --- line, so visible-to is not read', paths: false, body: '---\nvisible-to: {include: [main]}\nno close' });
   });
 
   it('names the problem of an unusable value and sets no filter', () => {

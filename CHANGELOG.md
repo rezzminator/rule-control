@@ -2,6 +2,16 @@
 
 Every release of rule-control. Versions follow [semantic versioning](https://semver.org); each release is the `main` commit tagged `rule-control--v<version>`, with a GitHub release carrying the section below.
 
+## [0.1.2] — 2026-11-01
+
+### Fixed
+
+- When finding the rules fails part way, the rules found before the failure stay targeted and only the rest reach every loop, where every rule reached every loop; the `discovery-failed` error says so and counts the rules kept.
+- A rule file whose frontmatter opens with `---`, never closes, and holds a `visible-to` key is named in a `frontmatter-problem` error: the key is not read, and the rule reaches every loop.
+- A `nested_memory` attachment whose first line names no file is logged as a `nested-header-unread` error, also on screen, and delivered whole to its loop.
+- When listing agents fails, a sub-agent takes the type announced at its start instead of being treated as unknown; the `agent-list-failed` error names the type it took.
+- Log rows built while the plugin log cannot be opened are held and written, oldest first, by the next write that can; the on-screen notice says how many rows are held.
+
 ## [0.1.1] — 2026-11-01
 
 ### Changed

@@ -37,7 +37,7 @@ No phase named = freeform request: read commands run freely; write operations fo
 2. `gh pr create --base main --head develop --title "release: X.Y.Z"` with the CHANGELOG section as the body.
 3. Wait for CI with `gh pr checks --watch` (one blocking call). A red check → report it and stop; never merge past it.
 4. `gh pr merge --merge` (a merge commit, never `--squash` or `--rebase`).
-5. The merge is the release: `release.yml`'s `publish` job tags the merge commit and creates the GitHub release. Never push a tag by hand.
+5. The merge is the release: `publish.yml`'s `publish` job tags the merge commit and creates the GitHub release. Never push a tag by hand.
 6. Verify the release: `gh release view rule-control--vX.Y.Z` after the `publish` run finishes (`gh run watch` on its run). Return to `develop` and fast-forward it to `main` if the merge commit is not yet on it (`git merge --ff-only origin/main`, pushed under the same authority).
 
 Return the merge sha, the tag, the release URL and the ahead/behind of both branches.

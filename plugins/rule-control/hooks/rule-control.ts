@@ -1,5 +1,5 @@
 import type { EngineInterface, HookFailure, Register } from 'claude-code';
-import { levelRow, pluginLogDir, PluginLogQueue, type PluginLogLevel } from '../src/plugin-log.ts';
+import { levelRow, PLUGIN_LOG_HOLD_ROWS, pluginLogDir, PluginLogQueue, type PluginLogLevel } from '../src/plugin-log.ts';
 import { AgentTypes } from '../src/agent-types.ts';
 import { ancestorDirs, nestedPath, render, rulesFor, splitShared, targeted, type Rule, type Tier } from '../src/rules.ts';
 import { admits, MAIN, readRule } from '../src/visible-to.ts';
@@ -15,7 +15,8 @@ import { admits, MAIN, readRule } from '../src/visible-to.ts';
 const PLUGIN = 'rule-control';
 
 type Snapshot = { rules: Map<string, Rule>; byAlias: Map<string, Rule> };
-type LogState = { work: Promise<void>; queue?: PluginLogQueue; session?: Promise<string | undefined>; failing: boolean };
+/** `held`: rows built while no queue could be made, written by the first that can, oldest first. */
+type LogState = { work: Promise<void>; queue?: PluginLogQueue; session?: Promise<string | undefined>; held: string[]; failing: boolean };
 type State = {
   snapshot?: Promise<Snapshot>;
   /** Rules read on demand for a `nested_memory` attachment, by the path it names. */
@@ -60,14 +61,18 @@ function plog($: EngineInterface, state: State, level: PluginLogLevel, event: st
   const at = Date.now();
   const log = state.log;
   log.work = log.work.then(async () => {
-    log.queue ??= new PluginLogQueue(pluginLogDir(await $.env.get('PLUGIN_LOG_DIR'), await $.env.get('HOME'), PLUGIN), PLUGIN);
     log.session ??= $.session.id().catch(() => undefined);
-    log.queue.add(levelRow({ plugin: PLUGIN, level, event, msg, where: `hooks/rule-control.ts#${hook}`, session: await log.session, detail }, at));
+    log.held.push(levelRow({ plugin: PLUGIN, level, event, msg, where: `hooks/rule-control.ts#${hook}`, session: await log.session, detail }, at));
+    // shortcut: past the hold the oldest held row goes uncounted; count it if a queue ever stays unmakeable for long.
+    if (log.held.length > PLUGIN_LOG_HOLD_ROWS) log.held.shift();
+    log.queue ??= new PluginLogQueue(pluginLogDir(await $.env.get('PLUGIN_LOG_DIR'), await $.env.get('HOME'), PLUGIN), PLUGIN);
+    for (const row of log.held.splice(0)) log.queue.add(row);
     const result = await log.queue.flush((argv) => $.process.run(argv, { timeoutMs: 5000 }));
     if (result.screen !== undefined) show($, result.screen);
     log.failing = false;
   }).catch((error) => {
-    if (!log.failing) show($, `plugin log unavailable: ${message(error)}; the ${event} row is not written`);
+    const held = log.held.length;
+    if (!log.failing) show($, held > 0 ? `plugin log unavailable: ${message(error)}; ${held} ${held === 1 ? 'row is' : 'rows are'} held for the next write` : `plugin log unavailable: ${message(error)}; the ${event} row is not written`);
     log.failing = true;
   });
 }
@@ -93,7 +98,7 @@ async function readRuleFile($: EngineInterface, state: State, path: string, real
   }
   const read = readRule(text);
   if (read.problem !== undefined) report($, state, 'error', 'frontmatter-problem', `${PLUGIN}: ${path}: ${read.problem}; the rule is kept and reaches every loop`, 'readRuleFile', { error: read.problem, path });
-  return { path: real, aliases: [path], tier, ...read };
+  return { path: real, tier, ...read };
 }
 
 // Every `*.md` under a rules directory, links followed, each file once by its real path.
@@ -136,8 +141,8 @@ async function walk($: EngineInterface, state: State, dir: string, tier: Tier, s
 }
 
 // The user tier (`$CLAUDE_CONFIG_DIR/rules`, else `~/.claude/rules`), then `.claude/rules` in the session root and each directory above it, below home.
-async function discover($: EngineInterface, state: State): Promise<Snapshot> {
-  const snapshot: Snapshot = { rules: new Map(), byAlias: new Map() };
+// Fills `snapshot` as it goes, so a failure part way keeps what was found.
+async function discover($: EngineInterface, state: State, snapshot: Snapshot): Promise<Snapshot> {
   const home = (await $.env.get('HOME')) || undefined;
   const config = (await $.env.get('CLAUDE_CONFIG_DIR')) || (home === undefined ? undefined : `${home.replace(/\/+$/, '')}/.claude`);
   if (config === undefined) report($, state, 'error', 'user-tier-skipped', `${PLUGIN}: neither CLAUDE_CONFIG_DIR nor HOME is set; user rules are not read and reach every loop`, 'discover');
@@ -151,9 +156,10 @@ async function discover($: EngineInterface, state: State): Promise<Snapshot> {
 function snapshotOf($: EngineInterface, state: State, fresh: boolean): Promise<Snapshot> {
   if (fresh || state.snapshot === undefined) {
     state.nested.clear();
-    state.snapshot = discover($, state).catch((error) => {
-      report($, state, 'error', 'discovery-failed', `${PLUGIN}: finding the rules failed: ${message(error)}; no rule is targeted, every rule reaches every loop`, 'discover', { error: message(error) });
-      return { rules: new Map(), byAlias: new Map() };
+    const snapshot: Snapshot = { rules: new Map(), byAlias: new Map() };
+    state.snapshot = discover($, state, snapshot).catch((error) => {
+      report($, state, 'error', 'discovery-failed', `${PLUGIN}: finding the rules failed: ${message(error)}; the rules found before it stay targeted, every other rule reaches every loop`, 'discover', { error: message(error), found: snapshot.rules.size });
+      return snapshot;
     });
   }
   return state.snapshot;
@@ -174,12 +180,9 @@ async function ruleAt($: EngineInterface, state: State, path: string): Promise<R
 
 // A loop's agent type; undefined, said once per loop, when nothing names it.
 async function loopOf($: EngineInterface, state: State, agentId: string, action: string, hook: string): Promise<string | undefined> {
-  let type: string | undefined;
-  try {
-    type = await state.types.of(agentId, () => $.agent.list());
-  } catch (error) {
-    plog($, state, 'error', 'agent-list-failed', `${PLUGIN}: listing agents failed: ${message(error)} ${action}; loop ${agentId} is treated as unknown`, hook, { error: message(error), agentId });
-  }
+  const failures: unknown[] = [];
+  const type = await state.types.of(agentId, () => $.agent.list(), (error) => failures.push(error));
+  for (const error of failures) plog($, state, 'error', 'agent-list-failed', `${PLUGIN}: listing agents failed: ${message(error)} ${action}; loop ${agentId} ${type ? `takes its announced type ${type}` : 'is treated as unknown'}`, hook, { error: message(error), agentId, ...(type ? { type } : {}) });
   if (type) return type;
   if (state.types.firstMiss(agentId)) {
     if (state.types.named(agentId)) plog($, state, 'error', 'loop-unresolved', `${PLUGIN}: loop ${agentId} resolves to no agent type ${action}; its rules are delivered as if every rule named it`, hook, { agentId, action });
@@ -211,7 +214,7 @@ function unpair(state: State, key: string): void {
 }
 
 function newState(): State {
-  return { nested: new Map(), mainGiven: new Set(), compacting: [], startGen: 0, contextGen: 0, types: new AgentTypes(), reported: new Set(), log: { work: Promise.resolve(), failing: false } };
+  return { nested: new Map(), mainGiven: new Set(), compacting: [], startGen: 0, contextGen: 0, types: new AgentTypes(), reported: new Set(), log: { work: Promise.resolve(), held: [], failing: false } };
 }
 
 export const register: Register = (on) => {
@@ -279,6 +282,7 @@ export const register: Register = (on) => {
   on('prompt.attachment', async ($, e, next) => {
     if (e.type !== 'nested_memory') return next(e);
     const path = nestedPath(e.text);
+    if (path === undefined) report($, state, 'error', 'nested-header-unread', `${PLUGIN}: a nested_memory attachment names no file on its first line; it is delivered whole to its loop`, 'prompt.attachment', { header: e.text.split('\n', 1)[0] });
     const rule = path === undefined ? undefined : await ruleAt($, state, path);
     if (rule?.filter === undefined) return next(e);
     const loop = e.agentId === undefined ? MAIN : await loopOf($, state, e.agentId, `while delivering ${path}`, 'prompt.attachment');

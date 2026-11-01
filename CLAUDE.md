@@ -18,7 +18,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 - plugin API: the function-hooks types of the Claude Code version CI pins, the truth for every hook's shape · `types/claude-code.d.ts`
 - tests: one vitest file per concern; `adapter.test.ts` drives the hooks against a stand-in engine · `tests/`
 - release check: the version agrees in all four places and `CHANGELOG.md` has its dated section · `scripts/release-check.sh`, `Makefile`
-- release workflow: the CI, run on the `develop → main` pull request · `.github/workflows/release.yml`
+- CI workflows: the check, run on the `develop → main` pull request, and the publish on its merge · `.github/workflows/ci.yml`, `.github/workflows/publish.yml`
 - gitter: this repository's only git writer · `.claude/agents/gitter.md`
 
 # Runtime
@@ -35,7 +35,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 
 ## CI
 
-- `check` (`make check`) and `release` (`make release`) gate the `develop → main` pull request; no CI runs on a push. Its merge runs `publish`, which tags the merge commit `rule-control--v{X.Y.Z}` and publishes the GitHub release from the CHANGELOG section.
+- `ci.yml`'s `check` (`make check`, on Linux and macOS) and `release` (`make release`) gate the `develop → main` pull request through its `ci` job; no CI runs on a push. Its merge runs `publish.yml`'s `publish`, which tags the merge commit `rule-control--v{X.Y.Z}` and publishes the GitHub release from the CHANGELOG section.
 
 # On demand
 
@@ -46,7 +46,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 ## Publication
 
 - **Nothing identifying ships:** NEVER a machine-absolute path (`/home/…`, `/Users/…`), personal data or a private project name in a tracked file, a commit message or a pull request body · guard `.claude/agents/gitter.md`
-- **`main` is release-only:** it moves only by merging the `develop → main` pull request with a merge commit, after `check` and `release` pass; NEVER a direct push, a squash or an admin override · guard `main is release-only` ruleset
+- **`main` is release-only:** it moves only by merging the `develop → main` pull request with a merge commit, after `ci` passes; NEVER a direct push, a squash or an admin override · guard `main is release-only` ruleset
 - **`develop` keeps its history:** NEVER force-push or delete it · guard `develop keeps its history` ruleset
 - **Code is pushed, and a release cut, only on the owner's ask;** README and marketing commits on `develop` are pushed as soon as they are committed · guard `.claude/agents/gitter.md`
 
@@ -65,6 +65,6 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
   1. On `develop`: bump the version in `plugins/rule-control/.claude-plugin/plugin.json`, `package.json`, `package-lock.json` and the README badge, and move `## [Unreleased]` in `CHANGELOG.md` to `## [X.Y.Z] — {date}`; a pre-release suffix becomes the real version, since every merge into `main` publishes.
   2. `make release-check` passes, after `git fetch origin main`.
   3. Open the `develop → main` pull request.
-  4. Merge it once `check` and `release` are green; `publish` tags and releases, and no tag is pushed by hand.
+  4. Merge it once `ci` is green; `publish` tags and releases, and no tag is pushed by hand.
 - Semantic versioning: a fix is a patch; a new option or behaviour a minor; a renamed or removed option a major, its CHANGELOG entry saying how to migrate.
 - Git writes go through gitter.

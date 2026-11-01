@@ -39,7 +39,11 @@ export function admitsAll(filter: Filter): boolean {
 export function readRule(text: string): RuleText {
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
   const close = lines[0]?.trim() === '---' ? lines.findIndex((line, i) => i > 0 && line.trim() === '---') : -1;
-  if (close < 0) return { paths: false, body: bodyOf(text.replace(/^﻿/, '')) };
+  if (close < 0) {
+    const body = bodyOf(text.replace(/^﻿/, ''));
+    // An opening fence that never closes is no frontmatter to the engine either: the key in it is said, never read.
+    return lines[0]?.trim() === '---' && topValue(lines.slice(1), KEY) !== undefined ? { problem: `the frontmatter has no closing --- line, so ${KEY} is not read`, paths: false, body } : { paths: false, body };
+  }
   const yaml = lines.slice(1, close);
   const body = bodyOf(lines.slice(close + 1).join('\n'));
   const paths = topValue(yaml, 'paths');

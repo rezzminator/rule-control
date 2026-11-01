@@ -1,6 +1,6 @@
 {
   "name": "rule-control",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Claude Code plugin for per-loop rule delivery — a rule file names the loops that receive it: the main chat, chosen agent types, or all",
   "license": "MIT",
   "author": {

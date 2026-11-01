@@ -6,7 +6,7 @@ import { MARKER } from '../plugins/rule-control/src/rules.ts';
 // the session's agents, and the hooks the module registers, driven the way
 // Claude Code drives them.
 type Hook = (...args: any[]) => any;
-type Options = { env?: Record<string, string>; root?: string; links?: Record<string, string>; agents?: Array<{ id: string; type: string }>; unlistable?: string };
+type Options = { env?: Record<string, string>; root?: string; links?: Record<string, string>; agents?: Array<{ id: string; type: string }>; unlistable?: string; rootError?: string; listError?: string; envErrors?: Record<string, number> };
 
 const HOME = '/u';
 const ROOT = '/w/proj';
@@ -51,12 +51,22 @@ function engine(files: Record<string, string> = FILES, options: Options = {}) {
   };
   const isDir = (path: string) => Object.keys(files).some((file) => file.startsWith(`${path}/`)) || Object.keys(links).some((link) => link.startsWith(`${path}/`));
   const $ = {
-    env: { get: async (name: string) => (options.env ?? { HOME })[name] },
-    session: { root: async () => options.root ?? ROOT, id: async () => 'sess-1' },
+    env: {
+      get: async (name: string) => {
+        // envErrors: how many reads of a name reject before it answers.
+        const left = options.envErrors?.[name] ?? 0;
+        if (left > 0) { options.envErrors![name] = left - 1; throw new Error(`env.get(${name}) denied`); }
+        return (options.env ?? { HOME })[name];
+      },
+    },
+    session: {
+      root: async () => { if (options.rootError !== undefined) throw new Error(options.rootError); return options.root ?? ROOT; },
+      id: async () => 'sess-1',
+    },
     process: { run: async (argv: string[]) => { runs.push(argv); return { exitCode: 0, stdout: '', stderr: '' }; } },
     // Claude Code puts the plugin's name before each line.
     ui: { log: (text: string) => { screen.push(`rule-control: ${text}`); } },
-    agent: { list: async () => options.agents ?? [] },
+    agent: { list: async () => { if (options.listError !== undefined) throw new Error(options.listError); return options.agents ?? []; } },
     fs: {
       list: async (dir: string) => {
         if (dir === options.unlistable) throw new Error(`EACCES: permission denied, scandir '${dir}'`);
@@ -300,5 +310,42 @@ describe('failing open', () => {
     expect(main).not.toContain('USER-MAIN');
     expect(eng.screen.some((line) => line.startsWith('rule-control: listing /w/.claude/rules failed: EACCES'))).toBe(true);
     expect((await eng.rows()).every((r) => r.dir === '/logs/rule-control')).toBe(true);
+  });
+
+  it('keeps the rules found before discovery failed targeted, and logs the failure', async () => {
+    const eng = engine(FILES, { rootError: 'session root unavailable' });
+    const main = text(await eng.startMain());
+    expect(main).toContain("Contents of /store/rules/user-main.md (user's private global instructions for all projects):\n\nUSER-MAIN");
+    expect(await eng.context(SHARED)).toEqual([`${ROOT}/CLAUDE.md`, '/w/.claude/rules/parent.md', `${RULES}/agent.md`, `${RULES}/all.md`, `${RULES}/bad.md`, `${RULES}/main.md`, `${RULES}/sub/nested.md`]);
+    expect(eng.screen).toEqual(['rule-control: finding the rules failed: session root unavailable; the rules found before it stay targeted, every other rule reaches every loop']);
+  });
+
+  it('takes the type a sub-agent announced when the agent list fails, and logs the failure', async () => {
+    const eng = engine(FILES, { listError: 'agent list unavailable' });
+    await eng.startMain();
+    await eng.context(SHARED);
+    expect(text(await eng.startAgent('a1', 'planner'))).toContain('AGENT-ONLY');
+    expect(await eng.attach(`${RULES}/scoped.md`, 'a1')).toBe('withheld');
+    expect(eng.screen).toContain(`rule-control: listing agents failed: agent list unavailable while delivering ${RULES}/scoped.md; loop a1 takes its announced type planner`);
+  });
+
+  it('delivers a nested_memory attachment whose first line names no file whole, and logs its header once', async () => {
+    const eng = engine();
+    for (const header of ['Contents of nothing readable', 'Contents of another']) {
+      let passed = false;
+      await eng.fire('prompt.attachment', { type: 'nested_memory', text: `${header}\n\nBody.`, origin: 'engine' }, async () => { passed = true; return { text: 'kept' }; });
+      expect(passed, header).toBe(true);
+    }
+    const line = 'rule-control: a nested_memory attachment names no file on its first line; it is delivered whole to its loop';
+    expect(eng.screen).toEqual([line]);
+    expect((await eng.rows()).filter((r) => r.row.event === 'nested-header-unread').map((r) => [r.file, r.row.msg, r.row.detail])).toEqual([['errors.jsonl', line, { header: 'Contents of nothing readable' }]]);
+  });
+
+  it('holds a log row whose log directory could not be read, and writes it with the next row', async () => {
+    const eng = engine(FILES, { envErrors: { PLUGIN_LOG_DIR: 1 } });
+    await eng.startMain();
+    expect(eng.screen).toContain('rule-control: plugin log unavailable: env.get(PLUGIN_LOG_DIR) denied; 1 row is held for the next write');
+    const rows = (await eng.rows()).filter((r) => r.row.event === 'frontmatter-problem');
+    expect(rows.map((r) => [r.dir, r.file, r.row.detail])).toEqual([['/u/.local/state/rule-control/logs', 'errors.jsonl', { path: `${RULES}/bad.md`, error: 'visible-to has an unknown key "only"; use include or exclude' }]]);
   });
 });
