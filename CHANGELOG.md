@@ -2,6 +2,13 @@
 
 Every release of rule-control. Versions follow [semantic versioning](https://semver.org); each release is the `main` commit tagged `rule-control--v<version>`, with a GitHub release carrying the section below.
 
+## [0.1.1] — 2026-11-01
+
+### Changed
+
+- rule-control ships its own marketplace, named `professor`: install with `claude plugin marketplace add rezzminator/rule-control`, then `claude plugin install rule-control@professor`. The README's install steps say so.
+- The log writer and the agent-type lookup are rule-control's own code, no longer copies kept identical to another repository's; logging behaves as before.
+
 ## [0.1.0] — 2026-10-31
 
 ### Added

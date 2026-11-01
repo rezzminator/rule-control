@@ -1,0 +1,24 @@
+{
+  "name": "professor",
+  "description": "Claude Code plugin for per-loop rule delivery — a rule file names the loops that receive it: the main chat, chosen agent types, or all",
+  "owner": {
+    "name": "rezzminator",
+    "url": "https://github.com/rezzminator/rule-control"
+  },
+  "plugins": [
+    {
+      "name": "rule-control",
+      "source": "./plugins/rule-control",
+      "description": "Claude Code plugin for per-loop rule delivery — a rule file names the loops that receive it: the main chat, chosen agent types, or all",
+      "homepage": "https://github.com/rezzminator/rule-control",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "claude-code-rules",
+        "subagents",
+        "context-engineering",
+        "function-hooks"
+      ]
+    }
+  ]
+}

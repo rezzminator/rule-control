@@ -11,8 +11,8 @@ merge.
 | `plugins/rule-control/` | Everything that installs, and nothing else; dev files never go in it |
 | `plugins/rule-control/src/visible-to.ts` | The `visible-to` frontmatter reader and loop matching, pure |
 | `plugins/rule-control/src/rules.ts` | Which rules a loop receives, the shared-context split, the delivered text, pure |
-| `plugins/rule-control/src/agent-types.ts` | A sub-agent's type by its id, from the agent list or its start |
-| `plugins/rule-control/src/plugin-log.ts` | The shared plugin-log library, vendored byte-identical; never edited here |
+| `plugins/rule-control/src/agent-types.ts` | A sub-agent's type by its id, from the agent list or its start; the plugin's own module |
+| `plugins/rule-control/src/plugin-log.ts` | The plugin's own logging module |
 | `plugins/rule-control/hooks/rule-control.ts` | The adapter: finds and reads the rules, resolves a loop, wires the hooks; the only file that touches `$` |
 | `tests/` | One vitest file per concern: `visible-to.test.ts` and `rules.test.ts` for the pure functions, `adapter.test.ts` for the hooks against a stand-in engine |
 | `types/claude-code.d.ts` | The plugin API, the truth for every hook's shape |
