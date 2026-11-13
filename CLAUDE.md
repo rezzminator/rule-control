@@ -48,7 +48,7 @@ Where Vocabulary, Runtime or On demand disagrees with the code on a path, comman
 - **Nothing identifying ships:** NEVER a machine-absolute path (`/home/…`, `/Users/…`), personal data or a private project name in a tracked file, a commit message or a pull request body · guard `.claude/agents/gitter.md`
 - **`main` is release-only:** it moves only by merging the `develop → main` pull request with a merge commit, after `ci` passes; NEVER a direct push, a squash or an admin override · guard `main is release-only` ruleset
 - **`develop` keeps its history:** NEVER force-push or delete it · guard `develop keeps its history` ruleset
-- **Code is pushed, and a release cut, only on the owner's ask;** README and marketing commits on `develop` are pushed as soon as they are committed · guard `.claude/agents/gitter.md`
+- **Code is pushed, and a release cut, only on the owner's ask** · guard `.claude/agents/gitter.md`
 
 ## Code
 
